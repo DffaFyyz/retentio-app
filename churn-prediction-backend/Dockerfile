@@ -4,6 +4,7 @@ WORKDIR /app
 
 ENV HOST=0.0.0.0
 ENV PORT=8000
+ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
 
 COPY package*.json ./
 RUN npm ci
