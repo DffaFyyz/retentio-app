@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --grain-opacity: 0.035;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  background: theme('colors.bone.50');
+  color: theme('colors.ink.900');
+  font-family: theme('fontFamily.sans');
+  font-feature-settings: 'ss01', 'ss02', 'cv11';
+}
+
+body {
+  min-width: 320px;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(255, 107, 53, 0.07) 0%, transparent 36%),
+    radial-gradient(circle at 100% 100%, rgba(93, 128, 67, 0.06) 0%, transparent 38%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+#root {
+  position: relative;
+  z-index: 2;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: theme('fontFamily.display');
+    font-optical-sizing: auto;
+    letter-spacing: 0;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .rule {
+    border-top: 1px solid theme('colors.ink.900');
+    border-bottom: 3px solid theme('colors.ink.900');
+    height: 4px;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: theme('colors.bone.100');
+}
+
+::-webkit-scrollbar-thumb {
+  background: theme('colors.bone.300');
+  border: 2px solid theme('colors.bone.100');
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: theme('colors.bone.400');
+}
+
+::selection {
+  background: theme('colors.ember.500');
+  color: theme('colors.bone.50');
+}
