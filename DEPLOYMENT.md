@@ -80,6 +80,12 @@ POSTGRES_PASSWORD=<strong-password>
 POSTGRES_DB=retentio
 DATABASE_URL=postgresql://retentio:<strong-password>@postgres:5432/retentio?schema=public
 RUN_DATABASE_SEED=false
+SEED_CS_AGENT_NAME=Retentio CS Agent
+SEED_CS_AGENT_EMAIL=agent@retentio.local
+SEED_CS_AGENT_PASSWORD=<strong-agent-password>
+SEED_MANAGER_NAME=Retentio Manager
+SEED_MANAGER_EMAIL=manager@retentio.local
+SEED_MANAGER_PASSWORD=<strong-manager-password>
 BETTER_AUTH_SECRET=<long-random-secret>
 BETTER_AUTH_URL=http://103.152.242.177
 FRONTEND_URL=http://103.152.242.177
@@ -91,7 +97,7 @@ VITE_API_URL=/api
 
 Docker Compose constructs the backend container `DATABASE_URL` from `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB`, so the app connects to `postgres:5432` inside Docker. Keep `DATABASE_URL` for Prisma commands you run outside Docker.
 
-Set `RUN_DATABASE_SEED=true` only when you want the backend startup to seed or refresh the synthetic demo data. The seed script uses upserts, so it is repeatable, but production normally leaves this as `false`.
+Set `RUN_DATABASE_SEED=true` only when you want the backend startup to seed or refresh the synthetic demo data and default users. The seed script uses upserts, so it is repeatable, but production normally leaves this as `false` after the first seed. Change the default user passwords before seeding production.
 
 Do not commit the real `.env`.
 

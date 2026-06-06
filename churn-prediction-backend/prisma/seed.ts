@@ -1,7 +1,27 @@
 import 'dotenv/config';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { hashPassword } from 'better-auth/crypto';
+import { Prisma, PrismaClient, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+const defaultUsers = [
+   {
+      id: 'seed-user-cs-agent',
+      accountId: 'seed-account-cs-agent',
+      name: process.env.SEED_CS_AGENT_NAME ?? 'Retentio CS Agent',
+      email: process.env.SEED_CS_AGENT_EMAIL ?? 'agent@retentio.local',
+      password: process.env.SEED_CS_AGENT_PASSWORD ?? 'RetentioAgent123!',
+      role: UserRole.CS_AGENT,
+   },
+   {
+      id: 'seed-user-manager',
+      accountId: 'seed-account-manager',
+      name: process.env.SEED_MANAGER_NAME ?? 'Retentio Manager',
+      email: process.env.SEED_MANAGER_EMAIL ?? 'manager@retentio.local',
+      password: process.env.SEED_MANAGER_PASSWORD ?? 'RetentioManager123!',
+      role: UserRole.MANAGER,
+   },
+] as const;
 
 const genders = ['Male', 'Female'] as const;
 const yesNo = ['Yes', 'No'] as const;
@@ -33,6 +53,52 @@ function round(value: number, digits = 2) {
 
 function clamp(value: number, min: number, max: number) {
    return Math.min(Math.max(value, min), max);
+}
+
+async function seedDefaultUsers() {
+   for (const seedUser of defaultUsers) {
+      const password = await hashPassword(seedUser.password);
+      const user = await prisma.user.upsert({
+         where: { email: seedUser.email.toLowerCase() },
+         create: {
+            id: seedUser.id,
+            name: seedUser.name,
+            email: seedUser.email.toLowerCase(),
+            emailVerified: true,
+            status: 'ACTIVE',
+            role: seedUser.role,
+         },
+         update: {
+            name: seedUser.name,
+            emailVerified: true,
+            status: 'ACTIVE',
+            role: seedUser.role,
+         },
+      });
+
+      await prisma.account.upsert({
+         where: { id: seedUser.accountId },
+         create: {
+            id: seedUser.accountId,
+            accountId: user.id,
+            providerId: 'credential',
+            userId: user.id,
+            password,
+         },
+         update: {
+            accountId: user.id,
+            providerId: 'credential',
+            userId: user.id,
+            password,
+         },
+      });
+   }
+
+   console.log(
+      `Seeded default users: ${defaultUsers
+         .map((user) => `${user.email} (${user.role})`)
+         .join(', ')}.`,
+   );
 }
 
 function serviceOption(hasInternet: boolean, index: number) {
@@ -220,6 +286,8 @@ function buildCustomer(index: number): Prisma.CustomerCreateInput {
 }
 
 async function main() {
+   await seedDefaultUsers();
+
    const customers = Array.from({ length: 200 }, (_, index) =>
       buildCustomer(index + 1),
    );
