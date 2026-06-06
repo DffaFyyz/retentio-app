@@ -5,6 +5,7 @@ WORKDIR /app
 ENV HOST=0.0.0.0
 ENV PORT=8000
 ENV DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public
+ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 
 COPY package*.json ./
 RUN npm ci
