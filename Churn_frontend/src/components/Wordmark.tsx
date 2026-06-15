@@ -25,7 +25,7 @@ export function Wordmark({
         )}
       />
       <span className={variant === 'dark' ? 'text-ink-900' : 'text-bone-50'}>
-        Churn<span className="italic font-light">Ai</span>
+        Retentio
       </span>
     </div>
   )

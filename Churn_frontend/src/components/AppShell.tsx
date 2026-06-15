@@ -96,7 +96,7 @@ function Sidebar({
             <Wordmark />
             <div className="mt-3 flex items-center gap-2">
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-900/45">
-                Churn Intelligence
+                Retention Intelligence
               </span>
               <span className="bg-ember-500/10 px-1.5 py-px font-mono text-[10px] text-ember-600">
                 v1

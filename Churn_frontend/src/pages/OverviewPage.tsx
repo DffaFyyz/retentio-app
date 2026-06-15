@@ -38,7 +38,7 @@ export function OverviewPage() {
     <div className="space-y-6 animate-rise sm:space-y-8">
       <PageHeader
         eyebrow="Dashboard · Today"
-        title={<>Churn<span className="italic font-light">Ai</span></>}
+        title="Retentio"
         description="A real-time view of churn risk across your customer base, scored by the Flask XGBoost model."
         action={
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-ink-900/55">
