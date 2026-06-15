@@ -1,4 +1,4 @@
-# ChurnAi
+# Retentio
 
 Retentio is a churn prediction CRM for telco customers. It combines a React dashboard, an Express API, and a Flask machine learning service to help teams view customer risk, manage intervention cases, and run churn predictions.
 

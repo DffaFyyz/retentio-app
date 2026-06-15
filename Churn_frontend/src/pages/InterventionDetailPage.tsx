@@ -21,7 +21,7 @@ export function InterventionDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const isManager = user?.role === 'ChurnAi Manager'
+  const isManager = user?.role === 'Retentio Manager'
   const [updating, setUpdating] = useState(false)
   const [resolveMode, setResolveMode] = useState<'RESOLVED' | 'CLOSED' | null>(null)
   const [error, setError] = useState<string | null>(null)

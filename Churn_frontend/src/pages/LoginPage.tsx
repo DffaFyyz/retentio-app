@@ -39,7 +39,7 @@ export function LoginPage() {
                   the silence.
                </>
             }
-            description="A predictive workspace for ChurnAi teams. Surface the customers most likely to leave, understand why, and act in time to keep them."
+            description="A predictive workspace for Retentio teams. Surface the customers most likely to leave, understand why, and act in time to keep them."
          />
 
          <main className="flex min-h-screen items-center justify-center bg-bone-50 px-6 py-10 lg:min-h-0 lg:px-14">
@@ -48,7 +48,7 @@ export function LoginPage() {
                   01 · Authenticate
                </span>
                <h1 className="mt-3 font-display text-4xl text-ink-900">Sign in</h1>
-               <p className="mt-2 text-sm text-ink-900/60">Access your ChurnAi workspace.</p>
+               <p className="mt-2 text-sm text-ink-900/60">Access your Retentio workspace.</p>
 
                <form onSubmit={handleSubmit} className="mt-9 space-y-5">
                   <Field label="Email">
@@ -56,7 +56,7 @@ export function LoginPage() {
                         type="email"
                         value={email}
                         onChange={(event) => setEmail(event.target.value)}
-                        placeholder="agent@churnai.com"
+                        placeholder="agent@retentio.com"
                         autoComplete="email"
                      />
                   </Field>

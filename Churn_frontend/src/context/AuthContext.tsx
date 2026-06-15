@@ -32,7 +32,7 @@ function toAppUser(user: BetterAuthUser): User {
     id: user.id,
     name: user.name,
     email: user.email,
-    role: user.role === 'MANAGER' ? 'ChurnAi Manager' : 'CS Agent',
+    role: user.role === 'MANAGER' ? 'Retentio Manager' : 'CS Agent',
   }
 }
 

@@ -17,7 +17,7 @@ const scopes: Array<'mine' | 'unassigned' | 'all'> = ['all', 'unassigned', 'mine
 
 export function InterventionsPage() {
   const { user } = useAuth()
-  const isManager = user?.role === 'ChurnAi Manager'
+  const isManager = user?.role === 'Retentio Manager'
   const [page, setPage] = useState(1)
   const [status, setStatus] = useState<CaseStatus | 'all'>('all')
   const [priority, setPriority] = useState<CasePriority | 'all'>('all')

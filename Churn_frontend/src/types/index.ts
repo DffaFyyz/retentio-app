@@ -53,7 +53,7 @@ export interface User {
   id: string
   name: string
   email: string
-  role: 'CS Agent' | 'ChurnAi Manager' | 'Admin'
+  role: 'CS Agent' | 'Retentio Manager' | 'Admin'
 }
 
 export type BackendRole = 'CS_AGENT' | 'MANAGER'

@@ -45,7 +45,7 @@ export function SignupPage() {
                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink-900/60">
                   01 · Create account
                </span>
-               <h1 className="mt-3 font-display text-4xl text-ink-900">Join ChurnAi</h1>
+               <h1 className="mt-3 font-display text-4xl text-ink-900">Join Retentio</h1>
                <p className="mt-2 text-sm text-ink-900/60">Start protecting your subscriber base.</p>
 
                <form onSubmit={handleSubmit} className="mt-9 space-y-5">
