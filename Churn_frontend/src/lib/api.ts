@@ -80,6 +80,19 @@ export interface ContractAggregate {
   churned: number
 }
 
+export interface ModelPerformance {
+  modelName: string
+  threshold: number
+  auc: number
+  accuracy: number
+  precision: number
+  recall: number
+  f1Score: number
+  positiveClass: string
+  evaluatedRows: number
+  source: string
+}
+
 export interface PaginatedCases {
   msg: 'success'
   data: InterventionCase[]
@@ -187,6 +200,7 @@ export const api = {
   getPredictionHistory: () => request<PredictionHistoryPoint[]>('/predictions/history'),
   getRiskDistribution: () => request<RiskDistributionBucket[]>('/predictions/distribution'),
   getContractAggregates: () => request<ContractAggregate[]>('/analytics/by-contract'),
+  getModelPerformance: () => request<ModelPerformance>('/analytics/model-performance'),
 
   listAgents: () => request<{ msg: 'success'; data: AgentUser[] }>('/users/agents'),
 

@@ -37,9 +37,19 @@ function aggregateFeatureImportance(customers: CustomerWithName[]) {
 export function InsightsPage() {
   const customersQ = useApi(() => api.listCustomers({ limit: 100 }), [])
   const contractsQ = useApi(() => api.getContractAggregates(), [])
+  const modelQ = useApi(() => api.getModelPerformance(), [])
   const customers = customersQ.data?.data ?? []
   const contracts = contractsQ.data ?? []
   const features = aggregateFeatureImportance(customers)
+  const model = modelQ.data
+  const performanceMetrics = model
+    ? [
+        ['F1-Score', formatPercent(model.f1Score, 0)],
+        ['Recall', formatPercent(model.recall, 0)],
+        ['Precision', formatPercent(model.precision, 0)],
+        ['Accuracy', formatPercent(model.accuracy, 0)],
+      ]
+    : []
 
   return (
     <div className="space-y-6 animate-rise sm:space-y-8">
@@ -132,24 +142,43 @@ export function InsightsPage() {
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-bone-300/70">Model performance</span>
-            <h2 className="mt-2 font-display text-3xl">XGBoost Classifier</h2>
+            <h2 className="mt-2 font-display text-3xl">{model?.modelName ?? 'XGBoost Classifier'}</h2>
           </div>
-          <span className="font-mono text-xs text-bone-300/60">Live threshold: 0.59</span>
+          <span className="font-mono text-xs text-bone-300/60">
+            {model ? `Live threshold: ${model.threshold.toFixed(2)} · AUC ${model.auc.toFixed(4)}` : 'Loading model metrics...'}
+          </span>
         </div>
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-          {[
-            ['F1-Score', '—'],
-            ['Recall', 'target ≥ 80%'],
-            ['Precision', '—'],
-            ['Accuracy', '—'],
-          ].map(([label, value]) => (
-            <div key={label} className="border-t border-bone-50/15 pt-4">
-              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-bone-300/70">{label}</div>
-              <div className="mt-2 font-display text-3xl tabular">{value === 'target ≥ 80%' ? '—' : value}</div>
-              {value === 'target ≥ 80%' && <div className="mt-1 font-mono text-[11px] text-bone-300/60">{value}</div>}
+        {modelQ.loading ? (
+          <div className="border-t border-bone-50/15 pt-4 font-mono text-xs uppercase tracking-[0.18em] text-bone-300/60">
+            Loading evaluation metrics...
+          </div>
+        ) : modelQ.error ? (
+          <div className="border-t border-bone-50/15 pt-4">
+            <div className="font-display text-xl text-bone-50">Could not load model metrics</div>
+            <button
+              type="button"
+              onClick={modelQ.refetch}
+              className="mt-2 font-mono text-xs uppercase tracking-[0.18em] text-ember-300 underline underline-offset-4"
+            >
+              Retry
+            </button>
+          </div>
+        ) : model ? (
+          <>
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+              {performanceMetrics.map(([label, value]) => (
+                <div key={label} className="border-t border-bone-50/15 pt-4">
+                  <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-bone-300/70">{label}</div>
+                  <div className="mt-2 font-display text-3xl tabular">{value}</div>
+                  {label === 'Recall' && <div className="mt-1 font-mono text-[11px] text-bone-300/60">Positive class: {model.positiveClass}</div>}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+            <div className="mt-6 border-t border-bone-50/10 pt-4 font-mono text-[11px] text-bone-300/55">
+              Evaluated on {model.evaluatedRows.toLocaleString()} test rows · Source: {model.source}
+            </div>
+          </>
+        ) : null}
       </section>
     </div>
   )
