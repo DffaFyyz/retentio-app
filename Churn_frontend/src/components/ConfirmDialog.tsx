@@ -10,6 +10,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   variant = 'default',
   loading,
+  error,
   onConfirm,
   onCancel,
 }: {
@@ -20,14 +21,15 @@ export function ConfirmDialog({
   cancelLabel?: string
   variant?: 'danger' | 'default'
   loading?: boolean
+  error?: string | null
   onConfirm: () => void
   onCancel: () => void
 }) {
   if (!open) return null
 
   return (
-    <ModalPortal>
-      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-ink-900/50 p-4 sm:p-6">
+    <ModalPortal onEscape={loading ? undefined : onCancel}>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-scrim/60 p-4 sm:p-6" role="dialog" aria-modal="true">
       <div className="w-full max-w-md animate-rise border border-ink-900/15 bg-bone-50 shadow-lift">
         <div className="px-6 py-6">
           <div className="flex items-start gap-4">
@@ -39,6 +41,7 @@ export function ConfirmDialog({
             <div>
               <h3 className="font-display text-xl text-ink-900">{title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-ink-900/65">{message}</p>
+              {error && <p className="mt-3 border-l-2 border-rust-500 pl-3 font-mono text-xs text-rust-500">{error}</p>}
             </div>
           </div>
         </div>

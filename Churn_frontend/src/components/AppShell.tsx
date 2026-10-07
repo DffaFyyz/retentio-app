@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Wordmark } from './Wordmark'
+import { ThemeToggle } from './ThemeToggle'
 import { Button } from './ui/Button'
 import { useAuth } from '@/context/AuthContext'
 import { cn, initials } from '@/lib/utils'
@@ -30,18 +31,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen lg:flex">
       <div className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-ink-900/10 bg-bone-100/95 px-4 backdrop-blur lg:hidden">
         <Wordmark />
-        <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Open menu">
-          <Menu className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Open menu">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
-      <Sidebar className="hidden lg:flex" />
+      <Sidebar className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen" />
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-ink-900/30"
+            className="absolute inset-0 bg-scrim/40"
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />
@@ -140,6 +144,7 @@ function Sidebar({
       </nav>
 
       <div className="border-t border-ink-900/10 px-3 py-4">
+        <ThemeToggle showLabel className="mb-2" />
         {user && (
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="flex h-9 w-9 items-center justify-center bg-ink-900 font-mono text-[10px] text-bone-50">

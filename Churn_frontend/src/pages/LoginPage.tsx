@@ -1,17 +1,21 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Wordmark } from '@/components/Wordmark'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
 import { useAuth } from '@/context/AuthContext'
 
 export function LoginPage() {
-   const { login, loading } = useAuth()
+   const { login } = useAuth()
    const navigate = useNavigate()
+   const location = useLocation()
    const [email, setEmail] = useState('')
    const [password, setPassword] = useState('')
    const [error, setError] = useState('')
+   const [loading, setLoading] = useState(false)
+   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/'
 
    async function handleSubmit(event: FormEvent) {
       event.preventDefault()
@@ -20,11 +24,13 @@ export function LoginPage() {
          setError('Both fields are required')
          return
       }
+      setLoading(true)
       try {
-         await login(email, password)
-         navigate('/')
-      } catch {
-         setError('Invalid credentials')
+         await login(email.trim(), password)
+         navigate(from === '/login' || from === '/signup' ? '/' : from, { replace: true })
+      } catch (err) {
+         setError(err instanceof Error && err.message ? err.message : 'Invalid credentials')
+         setLoading(false)
       }
    }
 
@@ -42,7 +48,8 @@ export function LoginPage() {
             description="A predictive workspace for Retentio teams. Surface the customers most likely to leave, understand why, and act in time to keep them."
          />
 
-         <main className="flex min-h-screen items-center justify-center bg-bone-50 px-6 py-10 lg:min-h-0 lg:px-14">
+         <main className="relative flex min-h-screen items-center justify-center bg-bone-50 px-6 py-10 lg:min-h-0 lg:px-14">
+            <ThemeToggle className="absolute right-4 top-4" />
             <div className="w-full max-w-sm animate-rise">
                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink-900/60">
                   01 · Authenticate
@@ -103,7 +110,7 @@ function AuthEditorial({
    description: string
 }) {
    return (
-      <aside className="relative hidden overflow-hidden bg-ink-900 px-12 py-10 text-bone-50 lg:flex lg:flex-col xl:px-16">
+      <aside className="keep-dark relative hidden overflow-hidden bg-ink-900 px-12 py-10 text-bone-50 lg:flex lg:flex-col xl:px-16">
          <div
             aria-hidden
             className="absolute inset-0 opacity-[0.07]"

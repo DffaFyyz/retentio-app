@@ -39,7 +39,7 @@ export function FilterBar({
             placeholder="Search by name, customer ID, contract, or internet..."
             value={filters.search}
             onChange={(event) => update('search', event.target.value)}
-            className="h-10 w-full bg-transparent pl-10 pr-4 text-sm placeholder:text-ink-900/35 focus:outline-none"
+            className="h-10 w-full bg-transparent pl-10 pr-4 text-sm text-ink-900 placeholder:text-ink-900/35 focus:outline-none"
           />
         </div>
         <div className="flex items-center justify-between gap-3 sm:justify-end">

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ButtonHTMLAttributes, type FormEvent } from 'react'
-import { Gift, Pencil, PhoneCall, Trash2, TrendingDown, TrendingUp, X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ArrowUpRight, Gift, Pencil, PhoneCall, Trash2, TrendingDown, TrendingUp, X } from 'lucide-react'
 import type { CustomerWithName, OutreachInput, RetentionOfferInput } from '@/lib/api'
 import { api } from '@/lib/api'
 import type { InterventionCase, OfferType, OutreachChannel, OutreachOutcome } from '@/types'
@@ -43,16 +44,30 @@ export function CustomerDrawer({
     setCaseLoading(true)
     setCaseError(null)
     try {
-      const result = await api.openInterventionCase({
+      const opened = await api.openInterventionCase({
         customerID: selectedCustomer.customerID,
         priority: selectedCustomer.riskLevel === 'HIGH' ? 'HIGH' : 'MEDIUM',
       })
+      const result = await api.getInterventionCase(opened.id).catch(() => opened)
       setActiveCase(result)
       return result
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to open case'
       setCaseError(message)
       throw error
+    } finally {
+      setCaseLoading(false)
+    }
+  }
+
+  async function refreshCase() {
+    if (!activeCase) return
+    setCaseLoading(true)
+    setCaseError(null)
+    try {
+      setActiveCase(await api.getInterventionCase(activeCase.id))
+    } catch (error) {
+      setCaseError(error instanceof Error ? error.message : 'Failed to refresh case')
     } finally {
       setCaseLoading(false)
     }
@@ -78,9 +93,9 @@ export function CustomerDrawer({
   }
 
   return (
-    <ModalPortal>
-      <div className="fixed inset-0 z-50 flex justify-end bg-ink-900/45 p-0 sm:p-4">
-      <div className="flex h-full w-full max-w-[44rem] animate-rise flex-col overflow-hidden border-l border-bone-50/10 bg-ink-900 text-bone-100 shadow-lift sm:h-[calc(100dvh-2rem)] sm:border">
+    <ModalPortal onEscape={onClose}>
+      <div className="fixed inset-0 z-50 flex justify-end bg-scrim/55 p-0 sm:p-4">
+      <div className="flex h-full w-full max-w-[44rem] keep-dark animate-rise flex-col overflow-hidden border-l border-bone-50/10 bg-ink-900 text-bone-100 shadow-lift sm:h-[calc(100dvh-2rem)] sm:border">
         <div className="flex shrink-0 items-start justify-between border-b border-bone-50/10 px-5 py-4 sm:px-7 sm:py-5">
           <div className="min-w-0">
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-bone-300/70">
@@ -206,6 +221,13 @@ export function CustomerDrawer({
                 <CasePill label={prettyEnum(activeCase.status)} />
                 <CasePill label={`${activeCase.priority} priority`} />
                 <span className="text-xs text-bone-300/70">Assigned to {activeCase.assignedTo?.name ?? 'Unassigned'}</span>
+                <Link
+                  to={`/interventions/${activeCase.id}`}
+                  className="ml-auto inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.12em] text-ember-400 hover:text-ember-300"
+                >
+                  View case
+                  <ArrowUpRight className="h-3 w-3" />
+                </Link>
               </div>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <MiniList
@@ -241,9 +263,9 @@ export function CustomerDrawer({
               type="button"
               tone="primary"
               disabled={caseLoading}
-              onClick={() => void openCase()}
+              onClick={() => void (activeCase ? refreshCase() : openCase().catch(() => undefined))}
             >
-              {activeCase ? 'Refresh case' : caseLoading ? 'Opening...' : 'Open case'}
+              {caseLoading ? (activeCase ? 'Refreshing...' : 'Opening...') : activeCase ? 'Refresh case' : 'Open case'}
             </DrawerActionButton>
             <DrawerActionButton
               type="button"
@@ -348,6 +370,19 @@ function MiniList({
   )
 }
 
+const emptyOutreach: OutreachInput = {
+  channel: 'PHONE',
+  outcome: 'CONTACTED',
+  notes: '',
+  nextFollowUpAt: '',
+}
+
+const emptyOffer: RetentionOfferInput = {
+  offerType: 'DISCOUNT',
+  title: '',
+  description: '',
+}
+
 function OutreachModal({
   open,
   onClose,
@@ -357,14 +392,15 @@ function OutreachModal({
   onClose: () => void
   onSubmit: (payload: OutreachInput) => Promise<void>
 }) {
-  const [form, setForm] = useState<OutreachInput>({
-    channel: 'PHONE',
-    outcome: 'CONTACTED',
-    notes: '',
-    nextFollowUpAt: '',
-  })
+  const [form, setForm] = useState<OutreachInput>(emptyOutreach)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    setForm(emptyOutreach)
+    setError(null)
+  }, [open])
 
   if (!open) return null
 
@@ -376,7 +412,7 @@ function OutreachModal({
       await onSubmit({
         channel: form.channel,
         outcome: form.outcome,
-        notes: form.notes || undefined,
+        notes: form.notes?.trim() || undefined,
         nextFollowUpAt: form.nextFollowUpAt || undefined,
       })
     } catch (err) {
@@ -387,7 +423,7 @@ function OutreachModal({
   }
 
   return (
-    <LightModal title="Log outreach" onClose={onClose} onSubmit={handleSubmit}>
+    <LightModal title="Log outreach" saving={saving} onClose={onClose} onSubmit={handleSubmit}>
       <Field label="Channel">
         <Select value={form.channel} onChange={(event) => setForm((current) => ({ ...current, channel: event.target.value as OutreachChannel }))}>
           {['PHONE', 'EMAIL', 'WHATSAPP', 'SMS', 'IN_APP', 'OTHER'].map((option) => <option key={option} value={option}>{prettyEnum(option)}</option>)}
@@ -419,25 +455,31 @@ function OfferModal({
   onClose: () => void
   onSubmit: (payload: RetentionOfferInput) => Promise<void>
 }) {
-  const [form, setForm] = useState<RetentionOfferInput>({
-    offerType: 'DISCOUNT',
-    title: '',
-    description: '',
-  })
+  const [form, setForm] = useState<RetentionOfferInput>(emptyOffer)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    setForm(emptyOffer)
+    setError(null)
+  }, [open])
 
   if (!open) return null
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!form.title.trim()) {
+      setError('Title is required')
+      return
+    }
     setSaving(true)
     setError(null)
     try {
       await onSubmit({
         offerType: form.offerType,
-        title: form.title,
-        description: form.description || undefined,
+        title: form.title.trim(),
+        description: form.description?.trim() || undefined,
         discountPercent: form.discountPercent,
         discountAmount: form.discountAmount,
         durationMonths: form.durationMonths,
@@ -450,7 +492,7 @@ function OfferModal({
   }
 
   return (
-    <LightModal title="Create retention offer" onClose={onClose} onSubmit={handleSubmit}>
+    <LightModal title="Create retention offer" saving={saving} onClose={onClose} onSubmit={handleSubmit}>
       <Field label="Offer type">
         <Select value={form.offerType} onChange={(event) => setForm((current) => ({ ...current, offerType: event.target.value as OfferType }))}>
           {['DISCOUNT', 'CONTRACT_UPGRADE', 'FREE_SUPPORT', 'SERVICE_BUNDLE', 'DEVICE_PROTECTION', 'CUSTOM'].map((option) => <option key={option} value={option}>{prettyEnum(option)}</option>)}
@@ -464,13 +506,13 @@ function OfferModal({
       </Field>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Discount %">
-          <Input type="number" value={form.discountPercent?.toString() ?? ''} onChange={(event) => setForm((current) => ({ ...current, discountPercent: event.target.value ? Number(event.target.value) : undefined, discountAmount: undefined }))} />
+          <Input type="number" min={0} max={100} step="any" value={form.discountPercent?.toString() ?? ''} onChange={(event) => setForm((current) => ({ ...current, discountPercent: event.target.value ? Number(event.target.value) : undefined, discountAmount: undefined }))} />
         </Field>
         <Field label="Amount">
-          <Input type="number" value={form.discountAmount?.toString() ?? ''} onChange={(event) => setForm((current) => ({ ...current, discountAmount: event.target.value ? Number(event.target.value) : undefined, discountPercent: undefined }))} />
+          <Input type="number" min={0} step="0.01" value={form.discountAmount?.toString() ?? ''} onChange={(event) => setForm((current) => ({ ...current, discountAmount: event.target.value ? Number(event.target.value) : undefined, discountPercent: undefined }))} />
         </Field>
         <Field label="Months">
-          <Input type="number" value={form.durationMonths?.toString() ?? ''} onChange={(event) => setForm((current) => ({ ...current, durationMonths: event.target.value ? Number(event.target.value) : undefined }))} />
+          <Input type="number" min={1} step={1} value={form.durationMonths?.toString() ?? ''} onChange={(event) => setForm((current) => ({ ...current, durationMonths: event.target.value ? Number(event.target.value) : undefined }))} />
         </Field>
       </div>
       {error && <div className="font-mono text-xs text-rust-500">{error}</div>}
@@ -481,22 +523,24 @@ function OfferModal({
 
 function LightModal({
   title,
+  saving,
   onClose,
   onSubmit,
   children,
 }: {
   title: string
+  saving?: boolean
   onClose: () => void
   onSubmit: (event: FormEvent) => void
   children: React.ReactNode
 }) {
   return (
-    <ModalPortal>
-      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-ink-900/50 p-4 sm:p-6">
+    <ModalPortal onEscape={saving ? undefined : onClose}>
+      <div className="fixed inset-0 z-[80] flex items-center justify-center bg-scrim/60 p-4 sm:p-6">
       <form onSubmit={onSubmit} className="w-full max-w-lg animate-rise border border-ink-900/15 bg-bone-50 text-ink-900 shadow-lift">
         <div className="flex items-center justify-between border-b border-ink-900/10 px-5 py-4">
           <h3 className="font-display text-xl">{title}</h3>
-          <button type="button" onClick={onClose} className="text-ink-900/50 hover:text-ink-900">
+          <button type="button" onClick={onClose} aria-label="Close" className="text-ink-900/50 hover:text-ink-900">
             <X className="h-5 w-5" />
           </button>
         </div>

@@ -13,6 +13,7 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/StatusStates'
 import { PageHeader, Panel } from '@/components/ui/Panel'
 import { api, type CustomerWithName } from '@/lib/api'
 import { useApi } from '@/hooks/useApi'
+import { useChartColors } from '@/context/ThemeContext'
 import { formatPercent } from '@/lib/utils'
 
 function aggregateFeatureImportance(customers: CustomerWithName[]) {
@@ -35,6 +36,7 @@ function aggregateFeatureImportance(customers: CustomerWithName[]) {
 }
 
 export function InsightsPage() {
+  const chart = useChartColors()
   const customersQ = useApi(() => api.listCustomers({ limit: 100 }), [])
   const contractsQ = useApi(() => api.getContractAggregates(), [])
   const modelQ = useApi(() => api.getModelPerformance(), [])
@@ -111,13 +113,13 @@ export function InsightsPage() {
                       }))}
                       margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
                     >
-                      <CartesianGrid stroke="#0a0a0a" strokeOpacity={0.06} vertical={false} />
-                      <XAxis dataKey="contract" tick={axisTick} axisLine={false} tickLine={false} />
-                      <YAxis unit="%" tick={axisTick} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [`${v.toFixed(1)}%`, 'Churn rate']} cursor={{ fill: '#0a0a0a', fillOpacity: 0.04 }} />
+                      <CartesianGrid stroke={chart.grid} strokeOpacity={0.08} vertical={false} />
+                      <XAxis dataKey="contract" tick={{ ...axisTick, fill: chart.axis }} axisLine={false} tickLine={false} />
+                      <YAxis unit="%" tick={{ ...axisTick, fill: chart.axis }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} formatter={(v: number) => [`${v.toFixed(1)}%`, 'Churn rate']} cursor={{ fill: chart.ink, fillOpacity: 0.05 }} />
                       <Bar dataKey="rate">
                         {contracts.map((_, index) => (
-                          <Cell key={index} fill={index === 0 ? '#ff6b35' : index === 1 ? '#7ba05b' : '#5d8043'} />
+                          <Cell key={index} fill={index === 0 ? chart.ember : index === 1 ? chart.mossLight : chart.moss} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -138,7 +140,7 @@ export function InsightsPage() {
         </Panel>
       </section>
 
-      <section className="bg-ink-900 p-6 text-bone-50 sm:p-8">
+      <section className="keep-dark bg-ink-900 p-6 text-bone-50 sm:p-8">
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-bone-300/70">Model performance</span>
@@ -184,12 +186,14 @@ export function InsightsPage() {
   )
 }
 
-const axisTick = { fontSize: 10, fontFamily: 'JetBrains Mono', fill: '#6b6960' }
+const axisTick = { fontSize: 10, fontFamily: 'JetBrains Mono' }
 const tooltipStyle = {
   background: '#0a0a0a',
-  border: 'none',
+  border: '1px solid rgba(250, 250, 247, 0.12)',
   borderRadius: 0,
   fontSize: 11,
   fontFamily: 'JetBrains Mono',
   color: '#fafaf7',
 }
+const tooltipItemStyle = { color: '#fafaf7' }
+const tooltipLabelStyle = { color: 'rgba(250, 250, 247, 0.7)' }

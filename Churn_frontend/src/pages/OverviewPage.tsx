@@ -18,10 +18,12 @@ import { Button } from '@/components/ui/Button'
 import { PageHeader, Panel } from '@/components/ui/Panel'
 import { api, emptyOverview } from '@/lib/api'
 import { useApi } from '@/hooks/useApi'
+import { useChartColors } from '@/context/ThemeContext'
 import { formatCompactCurrency, formatCurrency, formatPercent, initials } from '@/lib/utils'
 
 export function OverviewPage() {
   const navigate = useNavigate()
+  const chart = useChartColors()
   const overviewQ = useApi(() => api.getOverview(), [])
   const historyQ = useApi(() => api.getPredictionHistory(), [])
   const distQ = useApi(() => api.getRiskDistribution(), [])
@@ -69,20 +71,20 @@ export function OverviewPage() {
                 <AreaChart data={history} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gradInk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#0a0a0a" stopOpacity={0.18} />
-                      <stop offset="100%" stopColor="#0a0a0a" stopOpacity={0} />
+                      <stop offset="0%" stopColor={chart.ink} stopOpacity={0.18} />
+                      <stop offset="100%" stopColor={chart.ink} stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="gradEmber" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#ff6b35" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="#ff6b35" stopOpacity={0} />
+                      <stop offset="0%" stopColor={chart.ember} stopOpacity={0.3} />
+                      <stop offset="100%" stopColor={chart.ember} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#0a0a0a" strokeOpacity={0.06} vertical={false} />
-                  <XAxis dataKey="day" tick={axisTick} axisLine={false} tickLine={false} />
-                  <YAxis tick={axisTick} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: '#0a0a0a', strokeOpacity: 0.2 }} />
-                  <Area type="monotone" dataKey="predictions" stroke="#0a0a0a" strokeWidth={1.5} fill="url(#gradInk)" />
-                  <Area type="monotone" dataKey="flagged" stroke="#ff6b35" strokeWidth={1.5} fill="url(#gradEmber)" />
+                  <CartesianGrid stroke={chart.grid} strokeOpacity={0.08} vertical={false} />
+                  <XAxis dataKey="day" tick={{ ...axisTick, fill: chart.axis }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ ...axisTick, fill: chart.axis }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} cursor={{ stroke: chart.ink, strokeOpacity: 0.2 }} />
+                  <Area type="monotone" dataKey="predictions" stroke={chart.ink} strokeWidth={1.5} fill="url(#gradInk)" />
+                  <Area type="monotone" dataKey="flagged" stroke={chart.ember} strokeWidth={1.5} fill="url(#gradEmber)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -100,13 +102,13 @@ export function OverviewPage() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dist} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
-                  <CartesianGrid stroke="#0a0a0a" strokeOpacity={0.06} vertical={false} />
-                  <XAxis dataKey="range" tick={axisTick} axisLine={false} tickLine={false} />
-                  <YAxis tick={axisTick} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#0a0a0a', fillOpacity: 0.04 }} />
+                  <CartesianGrid stroke={chart.grid} strokeOpacity={0.08} vertical={false} />
+                  <XAxis dataKey="range" tick={{ ...axisTick, fill: chart.axis }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ ...axisTick, fill: chart.axis }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipLabelStyle} cursor={{ fill: chart.ink, fillOpacity: 0.05 }} />
                   <Bar dataKey="count">
                     {dist.map((bucket) => (
-                      <Cell key={bucket.range} fill={bucket.lower >= 0.8 ? '#a8442a' : bucket.lower >= 0.6 ? '#ff6b35' : '#5d8043'} />
+                      <Cell key={bucket.range} fill={bucket.lower >= 0.8 ? chart.rust : bucket.lower >= 0.6 ? chart.ember : chart.moss} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -137,7 +139,7 @@ export function OverviewPage() {
             {topAtRisk.map((customer) => (
               <button
                 key={customer.customerID}
-                onClick={() => navigate('/customers')}
+                onClick={() => navigate(`/customers?search=${encodeURIComponent(customer.customerID)}`)}
                 className="grid w-full grid-cols-[auto_1fr] gap-3 px-4 py-4 text-left transition-colors hover:bg-ink-900/[0.025] sm:grid-cols-[auto_1fr_auto_auto] sm:items-center sm:px-5"
               >
                 <div className="flex h-9 w-9 items-center justify-center bg-bone-200 font-mono text-[10px] text-ink-900">
@@ -191,12 +193,14 @@ function ChartFrame({ children }: { children: React.ReactNode }) {
   return <div className="h-72 px-2 py-5 sm:px-5">{children}</div>
 }
 
-const axisTick = { fontSize: 10, fontFamily: 'JetBrains Mono', fill: '#6b6960' }
+const axisTick = { fontSize: 10, fontFamily: 'JetBrains Mono' }
 const tooltipStyle = {
   background: '#0a0a0a',
-  border: 'none',
+  border: '1px solid rgba(250, 250, 247, 0.12)',
   borderRadius: 0,
   fontSize: 11,
   fontFamily: 'JetBrains Mono',
   color: '#fafaf7',
 }
+const tooltipItemStyle = { color: '#fafaf7' }
+const tooltipLabelStyle = { color: 'rgba(250, 250, 247, 0.7)' }

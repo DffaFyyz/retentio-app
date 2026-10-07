@@ -2,45 +2,50 @@ import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { Wordmark } from '@/components/Wordmark'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/Button'
 import { Field, Input } from '@/components/ui/Field'
 import { useAuth } from '@/context/AuthContext'
 
 export function SignupPage() {
-   const { signup, loading } = useAuth()
+   const { signup } = useAuth()
    const navigate = useNavigate()
    const [name, setName] = useState('')
    const [email, setEmail] = useState('')
    const [password, setPassword] = useState('')
    const [confirm, setConfirm] = useState('')
    const [error, setError] = useState('')
+   const [loading, setLoading] = useState(false)
 
    async function handleSubmit(event: FormEvent) {
       event.preventDefault()
       setError('')
-      if (!name || !email || !password) {
+      if (!name.trim() || !email.trim() || !password) {
          setError('All fields are required')
          return
       }
-      if (password.length < 6) {
-         setError('Password must be at least 6 characters')
+      if (password.length < 8) {
+         setError('Password must be at least 8 characters')
          return
       }
       if (password !== confirm) {
          setError('Passwords do not match')
          return
       }
+      setLoading(true)
       try {
-         await signup(name, email, password)
-         navigate('/')
-      } catch {
-         setError('Something went wrong')
+         await signup(name.trim(), email.trim(), password)
+         navigate('/', { replace: true })
+      } catch (err) {
+         setError(err instanceof Error && err.message ? err.message : 'Something went wrong')
+         setLoading(false)
       }
    }
 
    return (
       <div className="min-h-screen lg:grid lg:grid-cols-[0.92fr_1.08fr]">
-         <main className="flex min-h-screen items-center justify-center bg-bone-50 px-6 py-10 lg:min-h-0 lg:px-14">
+         <main className="relative flex min-h-screen items-center justify-center bg-bone-50 px-6 py-10 lg:min-h-0 lg:px-14">
+            <ThemeToggle className="absolute right-4 top-4" />
             <div className="w-full max-w-sm animate-rise">
                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-ink-900/60">
                   01 · Create account
@@ -99,7 +104,7 @@ export function SignupPage() {
             </div>
          </main>
 
-         <aside className="relative hidden overflow-hidden bg-ink-900 px-12 py-10 text-bone-50 lg:flex lg:flex-col xl:px-16">
+         <aside className="keep-dark relative hidden overflow-hidden bg-ink-900 px-12 py-10 text-bone-50 lg:flex lg:flex-col xl:px-16">
             <div
                aria-hidden
                className="absolute inset-0 opacity-[0.07]"

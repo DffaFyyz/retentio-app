@@ -54,15 +54,17 @@ export function InterventionDetailPage() {
     ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
   }, [interventionCase])
 
-  async function updateCase(payload: UpdateCaseInput) {
-    if (!id) return
+  async function updateCase(payload: UpdateCaseInput): Promise<boolean> {
+    if (!id) return false
     setUpdating(true)
     setError(null)
     try {
       await api.updateInterventionCase(id, payload)
       caseQ.refetch()
+      return true
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update case')
+      return false
     } finally {
       setUpdating(false)
     }
@@ -80,6 +82,14 @@ export function InterventionDetailPage() {
       setUpdating(false)
     }
   }
+
+  // CS agents may only move a case to IN_PROGRESS (or RESOLVED via the modal); going back to OPEN is rejected by the API.
+  const statusOptions: CaseStatus[] = !interventionCase || !activeStatusOptions.includes(interventionCase.status)
+    ? interventionCase ? [interventionCase.status] : []
+    : isManager || interventionCase.status === 'OPEN'
+      ? activeStatusOptions
+      : ['IN_PROGRESS']
+  const isFinal = interventionCase?.status === 'RESOLVED' || interventionCase?.status === 'CLOSED'
 
   if (caseQ.loading && !caseQ.data) {
     return <div className="border border-ink-900/10 bg-bone-50"><LoadingState message="Loading case detail..." /></div>
@@ -128,16 +138,16 @@ export function InterventionDetailPage() {
               <SelectField
                 label="Status"
                 value={interventionCase.status}
-                options={activeStatusOptions.includes(interventionCase.status) ? activeStatusOptions : [interventionCase.status]}
+                options={statusOptions}
                 disabled={updating || !activeStatusOptions.includes(interventionCase.status)}
-                onChange={(value) => updateCase({ status: value as CaseStatus })}
+                onChange={(value) => void updateCase({ status: value as CaseStatus })}
               />
               <SelectField
                 label="Priority"
                 value={interventionCase.priority}
                 options={priorityOptions}
                 disabled={updating || !isManager}
-                onChange={(value) => updateCase({ priority: value as CasePriority })}
+                onChange={(value) => void updateCase({ priority: value as CasePriority })}
               />
               {isManager && (
                 <AssignmentSelect
@@ -145,7 +155,7 @@ export function InterventionDetailPage() {
                   agents={agentsQ.data?.data ?? []}
                   loading={agentsQ.loading}
                   disabled={updating}
-                  onChange={(value) => updateCase({ assignedToId: value || null })}
+                  onChange={(value) => void updateCase({ assignedToId: value || null })}
                 />
               )}
             </div>
@@ -158,10 +168,12 @@ export function InterventionDetailPage() {
                 </div>
               )}
               <div className="flex flex-wrap gap-3">
-                <Button type="button" variant="primary" disabled={updating} onClick={() => setResolveMode('RESOLVED')}>
-                  Resolve case
-                </Button>
-                {isManager && (
+                {!isFinal && (
+                  <Button type="button" variant="primary" disabled={updating} onClick={() => setResolveMode('RESOLVED')}>
+                    Resolve case
+                  </Button>
+                )}
+                {isManager && interventionCase.status !== 'CLOSED' && (
                   <Button type="button" disabled={updating} onClick={() => setResolveMode('CLOSED')}>
                     Close case
                   </Button>
@@ -249,10 +261,11 @@ export function InterventionDetailPage() {
         mode={resolveMode ?? 'RESOLVED'}
         interventionCase={interventionCase}
         saving={updating}
+        serverError={error}
         onClose={() => setResolveMode(null)}
         onSubmit={async (payload) => {
-          await updateCase(payload)
-          setResolveMode(null)
+          // Keep the modal open on failure so the note isn't lost.
+          if (await updateCase(payload)) setResolveMode(null)
         }}
       />
     </div>
@@ -365,11 +378,13 @@ function ResolveCaseModal({
   mode,
   interventionCase,
   saving,
+  serverError,
   onClose,
   onSubmit,
 }: {
   open: boolean
   mode: 'RESOLVED' | 'CLOSED'
+  serverError?: string | null
   interventionCase: Pick<InterventionCase, 'outreachLogs' | 'retentionOffers' | 'resolutionOutcome' | 'resolutionNote' | 'finalOutreachLogId' | 'finalOfferId'>
   saving?: boolean
   onClose: () => void
@@ -409,8 +424,8 @@ function ResolveCaseModal({
   }
 
   return (
-    <ModalPortal>
-      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-ink-900/50 p-4 sm:p-6">
+    <ModalPortal onEscape={saving ? undefined : onClose}>
+      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-scrim/60 p-4 sm:p-6">
       <form onSubmit={handleSubmit} className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl animate-rise flex-col overflow-hidden border border-ink-900/15 bg-bone-50 shadow-lift">
         <div className="flex items-start justify-between gap-4 border-b border-ink-900/10 px-6 py-5">
           <div>
@@ -450,7 +465,7 @@ function ResolveCaseModal({
               }}
             />
           </div>
-          {localError && <div className="font-mono text-xs text-rust-500">{localError}</div>}
+          {(localError ?? serverError) && <div className="font-mono text-xs text-rust-500">{localError ?? serverError}</div>}
         </div>
         <div className="grid grid-cols-2 border-t border-ink-900/10">
           <Button type="button" variant="ghost" className="h-12" disabled={saving} onClick={onClose}>Cancel</Button>

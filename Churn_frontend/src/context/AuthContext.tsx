@@ -76,41 +76,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function login(email: string, password: string) {
-    setLoading(true)
-    try {
-      const result = await authRequest<BetterAuthAuthResponse>('/sign-in/email', {
-        email,
-        password,
-        rememberMe: true,
-      })
-      setUser(toAppUser(result.user))
-    } finally {
-      setLoading(false)
-    }
+    const result = await authRequest<BetterAuthAuthResponse>('/sign-in/email', {
+      email,
+      password,
+      rememberMe: true,
+    })
+    setUser(toAppUser(result.user))
   }
 
   async function signup(name: string, email: string, password: string) {
-    setLoading(true)
-    try {
-      const result = await authRequest<BetterAuthAuthResponse>('/sign-up/email', {
-        name,
-        email,
-        password,
-        rememberMe: true,
-      })
-      setUser(toAppUser(result.user))
-    } finally {
-      setLoading(false)
-    }
+    const result = await authRequest<BetterAuthAuthResponse>('/sign-up/email', {
+      name,
+      email,
+      password,
+      rememberMe: true,
+    })
+    setUser(toAppUser(result.user))
   }
 
   async function logout() {
-    setLoading(true)
     try {
       await authRequest<{ success: boolean }>('/sign-out', {})
-      setUser(null)
     } finally {
-      setLoading(false)
+      // Drop the local session even if the request fails so the user is never stuck logged in.
+      setUser(null)
     }
   }
 

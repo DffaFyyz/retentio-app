@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Download, Plus, Users } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import { CustomerDrawer } from '@/components/CustomerDrawer'
@@ -24,8 +25,10 @@ const initialFilters: FilterState = {
 }
 
 export function CustomersPage() {
-  const [filters, setFilters] = useState<FilterState>(initialFilters)
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search')?.trim() ?? ''
+  const [filters, setFilters] = useState<FilterState>({ ...initialFilters, search: initialSearch })
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch)
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(10)
   const [selected, setSelected] = useState<CustomerWithName | null>(null)
@@ -35,6 +38,7 @@ export function CustomersPage() {
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<CustomerWithName | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
 
@@ -51,6 +55,11 @@ export function CustomersPage() {
   const meta = data?.meta ?? { page, limit, totalRecords: 0, totalPages: 1 }
 
   const isFiltered = JSON.stringify(filters) !== JSON.stringify(initialFilters)
+
+  // After deleting the last row of the last page, step back instead of showing an empty page.
+  useEffect(() => {
+    if (data && data.meta.totalPages > 0 && page > data.meta.totalPages) setPage(data.meta.totalPages)
+  }, [data, page])
 
   function openCreateForm() {
     setFormInitial(null)
@@ -84,6 +93,7 @@ export function CustomersPage() {
   async function handleDeleteCustomer() {
     if (!deleteTarget) return
     setDeleting(true)
+    setDeleteError(null)
     try {
       await api.deleteCustomer(deleteTarget.customerID)
       setSelected(null)
@@ -91,6 +101,8 @@ export function CustomersPage() {
       setFormInitial(null)
       setDeleteTarget(null)
       refetch()
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete customer')
     } finally {
       setDeleting(false)
     }
@@ -224,11 +236,15 @@ export function CustomersPage() {
         open={deleteTarget !== null}
         title="Delete customer?"
         message={deleteTarget ? `${deleteTarget.displayName} and its prediction history will be permanently removed.` : ''}
+        error={deleteError}
         confirmLabel="Delete"
         variant="danger"
         loading={deleting}
         onConfirm={handleDeleteCustomer}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => {
+          setDeleteTarget(null)
+          setDeleteError(null)
+        }}
       />
     </div>
   )
@@ -288,7 +304,7 @@ function PaginationControls({
           <select
             value={limit}
             onChange={(event) => onLimitChange(Number(event.target.value))}
-            className="h-8 border border-ink-900/15 bg-bone-50 px-2 font-mono text-xs focus:outline-none"
+            className="h-8 border border-ink-900/15 bg-bone-50 px-2 font-mono text-xs text-ink-900 focus:border-ink-900 focus:outline-none"
           >
             {[10, 25, 50, 100].map((value) => (
               <option key={value} value={value}>{value}</option>

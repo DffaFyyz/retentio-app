@@ -4,6 +4,96 @@
 
 :root {
   --grain-opacity: 0.035;
+  --grain-blend: multiply;
+  color-scheme: light;
+
+  /* Palette as RGB channels so Tailwind opacity modifiers keep working. */
+  --ink-900: 10 10 10;
+  --ink-800: 20 20 20;
+  --ink-700: 28 28 28;
+  --ink-600: 38 38 38;
+  --ink-500: 58 58 58;
+
+  --bone-50: 250 250 247;
+  --bone-100: 244 243 238;
+  --bone-200: 232 230 220;
+  --bone-300: 212 209 196;
+  --bone-400: 154 151 138;
+  --bone-500: 107 105 96;
+
+  --ember-300: 255 170 130;
+  --ember-400: 255 140 90;
+  --ember-500: 255 107 53;
+  --ember-600: 232 82 32;
+
+  --moss-400: 123 160 91;
+  --moss-500: 93 128 67;
+  --moss-600: 69 96 48;
+
+  --rust-400: 199 93 62;
+  --rust-500: 168 68 42;
+  --rust-600: 135 53 31;
+}
+
+/* Night mode: ink (foreground) and bone (surfaces) swap roles, accents get brighter for contrast. */
+html.dark {
+  --grain-opacity: 0.05;
+  --grain-blend: overlay;
+  color-scheme: dark;
+
+  --ink-900: 240 238 230;
+  --ink-800: 226 223 212;
+  --ink-700: 208 205 192;
+  --ink-600: 186 183 170;
+  --ink-500: 160 157 145;
+
+  --bone-50: 22 22 20;
+  --bone-100: 15 15 14;
+  --bone-200: 38 37 34;
+  --bone-300: 58 57 52;
+  --bone-400: 120 118 108;
+  --bone-500: 150 147 136;
+
+  --ember-300: 255 185 150;
+  --ember-400: 255 150 105;
+  --ember-500: 255 116 66;
+  --ember-600: 255 133 87;
+
+  --moss-400: 150 190 115;
+  --moss-500: 120 162 88;
+  --moss-600: 150 190 115;
+
+  --rust-400: 232 128 98;
+  --rust-500: 220 108 78;
+  --rust-600: 236 132 104;
+}
+
+/*
+ * Surfaces that are intentionally dark in both themes (auth editorial panel,
+ * customer drawer, model performance card, chart tooltips) keep the original
+ * ink/bone mapping so their contrast stays the same in night mode.
+ */
+.keep-dark {
+  --ink-900: 10 10 10;
+  --ink-800: 20 20 20;
+  --ink-700: 28 28 28;
+  --ink-600: 38 38 38;
+  --ink-500: 58 58 58;
+
+  --bone-50: 250 250 247;
+  --bone-100: 244 243 238;
+  --bone-200: 232 230 220;
+  --bone-300: 212 209 196;
+  --bone-400: 154 151 138;
+  --bone-500: 107 105 96;
+
+  color-scheme: dark;
+}
+
+html.dark .keep-dark {
+  /* Lift the panel slightly off the near-black page background. */
+  --ink-900: 8 8 7;
+  --ink-800: 26 26 24;
 }
 
 * {
@@ -15,8 +105,8 @@ html,
 body,
 #root {
   min-height: 100%;
-  background: theme('colors.bone.50');
-  color: theme('colors.ink.900');
+  background: rgb(var(--bone-50));
+  color: rgb(var(--ink-900));
   font-family: theme('fontFamily.sans');
   font-feature-settings: 'ss01', 'ss02', 'cv11';
 }
@@ -36,7 +126,7 @@ body::before {
   z-index: 1;
   pointer-events: none;
   opacity: var(--grain-opacity);
-  mix-blend-mode: multiply;
+  mix-blend-mode: var(--grain-blend);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
@@ -61,8 +151,8 @@ body::before {
   }
 
   .rule {
-    border-top: 1px solid theme('colors.ink.900');
-    border-bottom: 3px solid theme('colors.ink.900');
+    border-top: 1px solid rgb(var(--ink-900));
+    border-bottom: 3px solid rgb(var(--ink-900));
     height: 4px;
   }
 }
@@ -88,19 +178,39 @@ body::before {
 }
 
 ::-webkit-scrollbar-track {
-  background: theme('colors.bone.100');
+  background: rgb(var(--bone-100));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: theme('colors.bone.300');
-  border: 2px solid theme('colors.bone.100');
+  background: rgb(var(--bone-300));
+  border: 2px solid rgb(var(--bone-100));
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: theme('colors.bone.400');
+  background: rgb(var(--bone-400));
 }
 
 ::selection {
-  background: theme('colors.ember.500');
-  color: theme('colors.bone.50');
+  background: rgb(var(--ember-500));
+  color: #fafaf7;
+}
+
+/* Smooth colour change when toggling the theme (disabled for reduced motion). */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease,
+    fill 0.25s ease,
+    stroke 0.25s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition,
+  html.theme-transition * {
+    transition: none !important;
+  }
 }

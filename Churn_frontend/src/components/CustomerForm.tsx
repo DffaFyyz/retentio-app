@@ -104,8 +104,8 @@ export function CustomerForm({
   const hasInternet = form.InternetService !== 'No'
 
   return (
-    <ModalPortal>
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-ink-900/45 p-3 sm:p-6">
+    <ModalPortal onEscape={loading ? undefined : onClose}>
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-scrim/55 p-3 sm:p-6">
       <form
         onSubmit={handleSubmit}
         className="flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl animate-rise flex-col overflow-hidden border border-ink-900/15 bg-bone-50 shadow-lift sm:max-h-[min(760px,calc(100dvh-3rem))]"
@@ -119,7 +119,7 @@ export function CustomerForm({
               {isEdit ? initial?.displayName : 'Add a record'}
             </h2>
           </div>
-          <button type="button" onClick={onClose} className="p-1 text-ink-900/50 hover:text-ink-900">
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-ink-900/50 hover:text-ink-900">
             <X className="h-5 w-5" />
           </button>
         </div>

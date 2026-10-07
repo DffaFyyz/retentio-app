@@ -27,6 +27,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function GuestRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-bone-50">
+        <LoadingState message="Checking session..." />
+      </div>
+    )
+  }
+
+  if (user) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
 function ProtectedShell({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
@@ -39,8 +54,8 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+        <Route path="/signup" element={<GuestRoute><SignupPage /></GuestRoute>} />
         <Route path="/" element={<ProtectedShell><OverviewPage /></ProtectedShell>} />
         <Route path="/customers" element={<ProtectedShell><CustomersPage /></ProtectedShell>} />
         <Route path="/interventions" element={<ProtectedShell><InterventionsPage /></ProtectedShell>} />
